@@ -1,0 +1,7 @@
+# Keep shell scripts with LF (required for bash on Linux/Mac)
+*.sh text eol=lf
+*.ps1 text eol=crlf
+
+# Markdown and JSON — auto
+*.md text=auto
+*.json text=auto

@@ -1,0 +1,62 @@
+# Spec: <feature-name>
+
+**Date:** <YYYY-MM-DD>
+**Version:** 1.0
+**Author:** Opus (VibeCodeProtocols)
+**Status:** Draft
+
+---
+
+## Problem / Problema
+
+<1-3 sentences: what problem does this solve and why it matters.>
+
+---
+
+## Target Users / Usuarios
+
+<Who uses this? Role, context, how often.>
+
+---
+
+## Acceptance Criteria / Criterios de aceptación
+
+- [ ] **AC1:** GIVEN <state>, WHEN <action>, THEN <result>
+- [ ] **AC2:** GIVEN <state>, WHEN <action>, THEN <result>
+- [ ] **AC3 (edge):** GIVEN <edge condition>, WHEN <action>, THEN <result>
+- [ ] **AC4 (error):** GIVEN <invalid input>, WHEN <action>, THEN <error type + message>
+
+---
+
+## Constraints / Restricciones
+
+- <Must use X>
+- <Must not break Y>
+- <Performance requirement>
+
+---
+
+## Non-Goals / No-Goals
+
+This spec does NOT cover:
+- <Exclusion 1>
+- <Exclusion 2>
+
+---
+
+## Stack & Dependencies
+
+- **Stack:** <auto-detected>
+- **Test runner:** <detected>
+- **New dependencies:** none | <package@version — reason>
+
+---
+
+## Definition of Done (DoD)
+
+- [ ] All ACs: unit + integration + e2e tests
+- [ ] Coverage ≥ 90%
+- [ ] Lint: 0 errors | Typecheck: 0 errors
+- [ ] README updated (if user-facing)
+- [ ] CHANGELOG entry added
+- [ ] .vibe/ updated

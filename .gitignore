@@ -1,0 +1,15 @@
+# Distribution artifacts (build locally, don't commit)
+*.zip
+checksums.txt
+dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project memory (optional: commit .vibe/ if you want shared memory)
+# .vibe/sessions/
+
+# Editor
+.vscode/
+.idea/

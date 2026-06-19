@@ -1,0 +1,40 @@
+{
+  "feature": "<feature-name>",
+  "spec": "docs/spec.md",
+  "created": "YYYY-MM-DD",
+  "tasks": [
+    {
+      "id": "T01",
+      "description": "One atomic action — one function or module",
+      "files_to_create": ["src/feature/module.ts"],
+      "files_to_modify": [],
+      "test_files": ["src/__tests__/module.unit.test.ts"],
+      "test_types": ["unit"],
+      "subagents": ["red", "green", "refactor"],
+      "depends_on": [],
+      "status": "pending"
+    },
+    {
+      "id": "T02",
+      "description": "Integration test for the module",
+      "files_to_create": [],
+      "files_to_modify": ["src/feature/module.ts"],
+      "test_files": ["src/__tests__/module.integration.test.ts"],
+      "test_types": ["integration"],
+      "subagents": ["red", "green", "refactor"],
+      "depends_on": ["T01"],
+      "status": "pending"
+    },
+    {
+      "id": "T03",
+      "description": "E2E scenario for user-facing feature",
+      "files_to_create": ["e2e/feature.e2e.test.ts"],
+      "files_to_modify": [],
+      "test_files": ["e2e/feature.e2e.test.ts"],
+      "test_types": ["e2e"],
+      "subagents": ["red", "green", "refactor"],
+      "depends_on": ["T02"],
+      "status": "pending"
+    }
+  ]
+}
