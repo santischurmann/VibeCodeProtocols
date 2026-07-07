@@ -32,6 +32,7 @@ cat <implementation_files>
 ```
 
 Do NOT document from the spec alone — read the actual code.
+Also read `.vibe/PATTERNS.md` first — match the project's existing doc conventions.
 
 ### Step 2 — Update inline documentation
 

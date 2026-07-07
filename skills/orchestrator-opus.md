@@ -1,40 +1,34 @@
 ---
 name: vcp-orchestrator-opus
 description: |
-  ES: Referencia técnica del orquestador Opus — protocolo de delegación, DoD, flujo de subagentes.
-  EN: Opus orchestrator technical reference — delegation protocol, DoD, subagent flow.
-allowed-tools: Read, Write, Edit, Bash, Task, Agent, Glob, Grep, TodoWrite
+  ES: Referencia técnica del orquestador — protocolo de delegación, DoD, flujo de subagentes, contrato fableultracode.
+  EN: Orchestrator technical reference — delegation protocol, DoD, subagent flow, fableultracode contract.
+allowed-tools: Read, Write, Edit, Bash, Task, Agent, Glob, Grep, TodoWrite, Skill
 ---
 
-# VCP Orchestrator — Opus Reference
+# VCP Orchestrator Reference
 
-This file defines the orchestration patterns used by the master SKILL.md.
-The orchestrator (Opus) is the single responsible agent. Subagents (Sonnet) execute atomic tasks.
+Orchestrator = single responsible agent, runs under `/fableultracode` contract (Phase 0 → session-long): autonomy, lead-with-outcome comms, evidence-gated actions. Subagents (Sonnet 5, effort per Phase 3 config) execute atomic tasks — no fableultracode wrapper on them, they just build.
 
 ---
 
 ## DELEGATION PATTERN
 
-For each task in `docs/tasks.json`, the orchestrator reads the relevant subagent skill file
-and spawns the subagent with full context. Pattern:
+For each task in `docs/tasks.json`, read the subagent skill file, spawn with full context:
 
 ```python
 # Pseudocode — actual delegation via Agent tool
 task = load_task("T01")
-
-# Load subagent instructions
 red_instructions = read_file("skills/subagent-red.md")
 
-# Spawn with full context
 Agent(
   subagent_type="claude",
-  model="claude-sonnet-4-6",   # latest Sonnet
+  model="sonnet",           # alias, always latest Sonnet
+  effort=config.effort,     # from Phase 3 CONFIG menu — default "low"
   prompt=f"""
 {red_instructions}
-
 ---
 ## TASK CONTEXT
-
 Task: {task.id} — {task.description}
 Test files to write: {task.test_files}
 Test types required: {task.test_types}
@@ -44,103 +38,112 @@ Spec: [read docs/spec.md]
 )
 ```
 
+If a task looks harder mid-build and config allowed override (Phase 3 CONFIG, option B) → bump that task's effort, note why in `.vibe/SESSION.md`.
+
 ---
 
 ## SUBAGENT SEQUENCING PER TASK
 
 ```
 Task T01:
-  1. Spawn RED → wait for completion → verify failure output
+  1. Spawn RED → wait → verify failure output
   2. Run verify-red.sh (hard gate)
-  3. If gate passes → spawn GREEN → wait → verify pass output
-  4. If GREEN passes → spawn REFACTOR → wait → verify pass output
+  3. Gate pass → spawn GREEN → wait → verify pass
+  4. GREEN pass → spawn REFACTOR → wait → verify still pass
   5. Spawn DOCS → wait → confirm .vibe/ updated
-  6. Update .vibe/SESSION.md
-  7. Update tasks.json: T01 status → "done"
+  6. .vibe/SESSION.md += 1 line per gate (resume ledger)
+  7. tasks.json: T01 status → done (pending→red→green→refactor→done)
 ```
 
 ---
 
 ## PARALLEL vs SEQUENTIAL
 
-**Sequential (required):** RED → GREEN → REFACTOR per task. Never parallel within a task.
+**Sequential, always:** RED → GREEN → REFACTOR within one task.
 
-**Parallel (allowed):** Tasks with no `depends_on` overlap can run in parallel across different task IDs.
-Example: T01 and T03 have no overlap → spawn both RED subagents simultaneously.
+**Parallel, if Phase 2 CONFIG allowed it:** tasks with no `depends_on` overlap spawn simultaneously. T01 + T03 no overlap → both RED subagents at once.
 
-**CHORE tasks:** Run CHORE after all tasks complete (lint, typecheck, coverage gate).
+**CHORE:** after all tasks done (lint, typecheck, coverage) — also reusable inside Phase 4.1/4.3 for fixes.
 
 ---
 
-## FAILURE ESCALATION PROTOCOL
+## FAILURE ESCALATION
 
-| Failure | Orchestrator action |
+| Failure | Action |
 |---|---|
-| RED gate fails (tests pass) | Ask user: "Tests pass without impl. Fix test file or create impl first?" (A/B/C) |
-| GREEN fails (tests still red) | Read error output. Can orchestrator fix? If yes: spawn GREEN again with diagnosis. If no: ask user. |
-| Coverage < 90% | Identify uncovered ACs. Create new tasks. Run RED/GREEN cycle. |
-| Lint/typecheck errors | Spawn CHORE-A or CHORE-B. If CHORE can't fix: show error to user. |
-| Build fails | Spawn CHORE-E. If still fails: show user full error output. |
+| RED gate fails (tests pass) | Ask user: fix test file or impl first? (A/B) |
+| GREEN fails (still red) | Read error. Orchestrator can fix → respawn GREEN w/ diagnosis. Can't → ask user. |
+| Coverage < 90% (Phase 4.1) | Identify uncovered ACs, new tasks, RED/GREEN cycle. |
+| Lint/typecheck errors | Spawn CHORE-A/B. Can't fix → show user. |
+| cyber-neo finds Critical/High (Phase 4.3) | Fix before continuing, re-scan. Never defer critical/high. |
+| Adversarial review finding survives (Phase 4.4) | Fix, re-verify, re-run that lens. |
+| Session killed / compacted mid-task | RESUME protocol below. Never re-run a passed gate blind, never skip a pending one. |
+
+---
+
+## RESUME AFTER RESTART / COMPACTION
+
+1. Re-read: `.vibe/SESSION.md` (gate ledger) → `docs/tasks.json` (status).
+2. First task not `done` = current. Re-detect phase with evidence: run its tests (FAIL=pre-GREEN, PASS=post-GREEN). Never trust memory.
+3. `git diff` its test files — changed since RED = violation, stop, report.
+4. Continue sequencing from detected step. Gate rules: `skills/caveman-tdd.md`.
+5. If restart lands inside Phase 4 (Final) — re-check which of 4.1-4.7 last completed via `SESSION.md`, resume from next.
 
 ---
 
 ## DEFINITION OF DONE (DoD) CHECKLIST
 
-Before declaring any phase complete, verify:
+### Phase 3 BUILD — per task:
+- [ ] RED report: failure shown
+- [ ] GREEN report: pass shown
+- [ ] REFACTOR report: still green
+- [ ] No regressions full suite
 
-### Phase 3 (BUILD) — per task:
-- [ ] RED report shows test failure
-- [ ] GREEN report shows test pass
-- [ ] REFACTOR report shows tests still green
-- [ ] No regressions in full suite
-
-### Phase 4 (TEST):
-- [ ] `<test_command> --run` exits 0
-- [ ] Coverage ≥ 90% (json report confirms)
-- [ ] `<lint_command>` exits 0
-- [ ] `<typecheck_command>` exits 0
-
-### Phase 5 (SIMPLIFY):
-- [ ] Tests still green after cleanup
-- [ ] No new lines without test coverage
-
-### Phase 6 (DEPLOY):
-- [ ] `dist/` exists and has expected artifacts
-- [ ] `dist.zip` exists and is non-empty
-- [ ] `checksums.txt` exists
-- [ ] CHANGELOG.md has versioned entry
-- [ ] `.vibe/SESSION.md` archived
+### Phase 4 FINAL:
+- [ ] 4.1 coverage ≥90%, lint 0, typecheck 0
+- [ ] 4.2 tests green after simplify
+- [ ] 4.3 cyber-neo clean (no open Critical/High)
+- [ ] 4.4 adversarial review: no surviving finding
+- [ ] 4.5 full suite green (post-fix)
+- [ ] 4.6 committed; push/merge only after user 🔵 confirm
+- [ ] 4.7 Obsidian note (if applicable) + graphify updated (if applicable) + SESSION.md archived
 
 ---
 
-## MULTIPLE CHOICE QUESTION TEMPLATE
+## MULTIPLE CHOICE TEMPLATES
 
+**Config (phase-start, once):**
+```
+🔵 [PHASE] CONFIG
+A) [option, default marked]
+B) [option]
+Waiting for answer before continuing.
+```
+
+**Content decision:**
 ```
 🔵 DECISION: <topic>
-Context: <why this choice matters>
-
-A) <option> — Pro: <benefit>. Con: <tradeoff>.
-B) <option> — Pro: <benefit>. Con: <tradeoff>.
-C) <option> — Pro: <benefit>. Con: <tradeoff>.
-
-Esperando tu respuesta antes de continuar. / Waiting for your answer before continuing.
+Context: <why this matters>
+A) <option> — Pro/Con
+B) <option> — Pro/Con
+Esperando tu respuesta antes de continuar.
 ```
 
 ---
 
 ## TODO TRACKING
 
-The orchestrator uses TodoWrite to track phase progress:
-
 ```
-Phase 0 Bootstrap      → [x] complete
-Phase 1 SPEC           → [ ] in progress
-Phase 2 PLAN           → [ ] pending
-Phase 3 BUILD T01      → [ ] pending
-Phase 3 BUILD T02      → [ ] pending
-Phase 4 TEST           → [ ] pending
-Phase 5 SIMPLIFY       → [ ] pending
-Phase 6 DEPLOY         → [ ] pending
+Phase 0 Bootstrap (+fableultracode) → [x]
+Phase 1 SPEC                        → [ ]
+Phase 2 PLAN                        → [ ]
+Phase 3 BUILD T01..TNN               → [ ]
+Phase 4 FINAL
+  4.1 Verify   → [ ]
+  4.2 Simplify → [ ]
+  4.3 Security (cyber-neo) → [ ]
+  4.4 Adversarial review   → [ ]
+  4.5 Tests (final)        → [ ]
+  4.6 Commit/push/merge    → [ ]
+  4.7 Backups              → [ ]
 ```
-
-Update each item as phases complete.

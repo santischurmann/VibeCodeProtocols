@@ -71,7 +71,9 @@ Show user a 3-5 line summary of what the memory contains.
 | Choosing between two approaches | `DECISIONS.md` | Decision + reasoning + tradeoffs considered |
 | Discovering how the project does X | `PATTERNS.md` | Pattern name + example + when to apply |
 | Completing a phase | `SESSION.md` | Phase, what was done, output, issues |
+| Passing/failing a gate (RED/GREEN/coverage) | `SESSION.md` | One line: `T<id> <gate> <result>` — resume checkpoint |
 | Finding debt but deferring | `DEBT.md` | What, where, severity, why deferred |
+| cyber-neo Medium/Low finding (Phase 4.3) | `DEBT.md` | Finding + CWE/OWASP ref + severity + why not fixed now |
 | Session end | `sessions/` | Archive SESSION.md with date prefix |
 
 ---
@@ -121,6 +123,15 @@ Show user a 3-5 line summary of what the memory contains.
 **Why deferred:** [reason]
 ---
 ```
+
+---
+
+## RESUME (killed session / compacted context)
+
+`SESSION.md` is the checkpoint ledger. Read it bottom-up: the last gate line is the last
+verified state. Cross-check against `docs/tasks.json` `status` fields, then re-detect the
+current phase with evidence (run the task's tests) — never from memory. Full protocol:
+`skills/caveman-tdd.md` → RESUME AFTER COMPACTION / RESTART.
 
 ---
 

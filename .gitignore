@@ -13,3 +13,6 @@ Thumbs.db
 # Editor
 .vscode/
 .idea/
+
+# Local pre-rewrite safety snapshots (not part of the product)
+_backups/

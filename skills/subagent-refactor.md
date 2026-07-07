@@ -30,6 +30,7 @@ readable, and maintainable — without adding features or breaking tests.
 ```
 
 All tests must pass BEFORE you touch anything. If not → stop and report.
+Record the passing count — Step 4 must match it (zero silent losses).
 
 ### Step 1 — Read ALL changed files
 

@@ -97,6 +97,7 @@ GREEN GATE: PASS — [N] tests passing. No regressions. Ready for REFACTOR.
 - ❌ Do NOT add error handling not tested
 - ❌ Do NOT add logging, metrics, or observability not tested
 - ❌ Do NOT skip verifying passing tests before reporting
+- ❌ Do NOT update `docs/tasks.json` or `.vibe/SESSION.md` — the orchestrator owns checkpoints
 
 ## IF TESTS STILL FAIL
 

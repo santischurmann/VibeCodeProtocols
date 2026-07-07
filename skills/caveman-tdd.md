@@ -18,6 +18,10 @@ allowed-tools: Read, Bash
 2. **GREEN before REFACTOR.** No cleanup on broken code.
 3. **REFACTOR before DOCS.** Document the clean version.
 
+**Hard gate #4, same rank: coverage ≥ 90% before SIMPLIFY/DEPLOY** (commands in COVERAGE GATE below).
+
+**Precedence:** these gates override any speed/convenience heuristic. Definitions elsewhere: `SKILL.md` (phases, Phase 4 Final, full DoD), `skills/subagent-{red,green,refactor,docs}.md` (executors), `skills/deploy-zip.md` (optional artifact sub-step of 4.7). Gate wording conflicts → this file wins.
+
 ---
 
 ## HARD GATE VERIFICATION PROTOCOL
@@ -25,38 +29,23 @@ allowed-tools: Read, Bash
 Before every GREEN subagent spawn, the orchestrator MUST run this check:
 
 ```bash
-#!/usr/bin/env bash
-# verify-red.sh — run by orchestrator after RED subagent completes
-set -euo pipefail
-
-TEST_PATTERN="${1:?Usage: verify-red.sh <test_file_pattern>}"
-TEST_CMD="${2:?Usage: verify-red.sh <pattern> <test_command>}"
-
-echo "=== RED GATE CHECK ==="
-echo "Running: $TEST_CMD $TEST_PATTERN"
-echo ""
-
-# Run tests and capture exit code
-set +e
-output=$($TEST_CMD "$TEST_PATTERN" 2>&1)
-exit_code=$?
-set -e
-
-echo "$output" | head -50
-
-if [ $exit_code -eq 0 ]; then
-  echo ""
-  echo "🚫 RED GATE: FAIL"
-  echo "Tests PASSED — no implementation should make them pass yet."
-  echo "Action: Review test file. Tests may be importing mocks, testing wrong thing, or file already has implementation."
-  exit 1
-else
-  echo ""
-  echo "✅ RED GATE: PASS"
-  echo "Tests failing as expected. Proceed to GREEN subagent."
-  exit 0
-fi
+scripts/verify-red.sh "<test_pattern>" "<test_command>"
+# Example: scripts/verify-red.sh "src/__tests__/auth.test.ts" "npx vitest run"
 ```
+
+Script on disk = single source of truth — do NOT re-embed copies (they drift). Tests exit 0 (all pass) → 🚫 gate FAIL, no GREEN; nonzero → ✅ gate PASS.
+
+**Blind spot — manual check mandatory:** ANY nonzero exit counts as PASS, but syntax/collection errors also exit nonzero. Failure output must show assertion failures or import-of-missing-module, NOT parse/collection errors. Parse error = fix test, re-run gate. Garbage tests make GREEN meaningless.
+
+**Checkpoint (long tasks):** after every gate result, append one line to `.vibe/SESSION.md` (`T<id> RED gate PASS` / `GREEN ✅` / `REFACTOR green` / `coverage NN%`). Killed session must never skip a gate or blindly re-run a passed one.
+
+---
+
+## RESUME AFTER COMPACTION / RESTART
+
+1. Re-read, in order: this file → `.vibe/SESSION.md` → `docs/tasks.json`.
+2. Re-detect phase (never trust memory): run current task's tests. FAIL = pre-GREEN (RED done). PASS = post-GREEN.
+3. `git diff` test files. Changed since RED = violation → stop, report.
 
 ---
 
@@ -67,7 +56,7 @@ fi
 - [ ] Tests import the module under test (file may not exist yet — that's fine)
 - [ ] Each Acceptance Criterion has at least one test
 - [ ] Unit tests: one per AC minimum
-- [ ] Integration tests: one per flow minimum  
+- [ ] Integration tests: one per flow minimum
 - [ ] E2E tests: one per user scenario minimum
 - [ ] Tests run and FAIL (not error-out due to syntax — fail due to missing impl)
 - [ ] Failure output captured and visible
@@ -95,8 +84,8 @@ fi
 |---|---|---|
 | GREEN skips RED | Tests pass without implementation | RED gate script exits 0 |
 | RED writes passing test | Gate fails at wrong place | Gate output shows 0 failures |
-| GREEN over-engineers | Adds features not in tests | Review new files/functions vs task scope |
-| REFACTOR adds feature | New code not covered by tests | Coverage drops on new lines |
+| GREEN over-engineers | Adds features not in tests | `git diff --stat` vs task JSON `files_to_create`/`files_to_modify` |
+| REFACTOR adds feature | New code not covered by tests | Coverage drops on new lines — run COVERAGE GATE cmd |
 | Subagent modifies tests | Tests change between RED and GREEN | `git diff` on test files |
 
 ---
@@ -120,10 +109,10 @@ These are common excuses to skip RED gate. All rejected.
 Minimum: **90%** (lines + branches)
 
 ```bash
-# Node/TS — vitest
-npx vitest run --coverage --coverage.reporter=json-summary 2>/dev/null
-cat coverage/coverage-summary.json | node -e "
-  const d = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+# Node/TS — vitest (don't hide stderr — failures stay visible)
+npx vitest run --coverage --coverage.reporter=json-summary
+node -e "
+  const d = JSON.parse(require('fs').readFileSync('coverage/coverage-summary.json','utf8'));
   const pct = d.total.lines.pct;
   console.log('Coverage:', pct + '%');
   process.exit(pct >= 90 ? 0 : 1);
@@ -136,4 +125,6 @@ pytest --cov --cov-fail-under=90 2>&1 | tail -5
 go test ./... -coverprofile=coverage.out && go tool cover -func=coverage.out | grep total
 ```
 
-If coverage < 90%: do NOT proceed to SIMPLIFY or DEPLOY. Spawn RED/GREEN cycle for uncovered paths.
+If coverage < 90%: do NOT proceed to Phase 4 (Final: simplify/security/adversarial/deploy). Spawn RED/GREEN cycle for uncovered paths.
+
+Coverage gate ≠ done. Full DoD (SKILL.md Phase 4): suite green + lint 0 + typecheck 0 + cyber-neo clean + adversarial pass.

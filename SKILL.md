@@ -1,107 +1,74 @@
 ---
 name: VibeCodeProtocols
-description: "TDD methodology for Claude Code: Opus orchestrates spec/plan/verify/deploy, Sonnet implements via 5 subagents (RED/GREEN/REFACTOR/DOCS/CHORE), .vibe/ persists memory. Hard gate: no red test = no code."
+description: "TDD methodology for Claude Code: orchestrator runs under fableultracode contract, Sonnet 5 (low effort default) implements via 5 subagents (RED/GREEN/REFACTOR/DOCS/CHORE), .vibe/ persists memory. Final phase = fableultracode-orchestrated verify+simplify+security(cyber-neo)+adversarial+tests+commit/push/merge+backups. Hard gate: no red test = no code."
 ---
 
-# VibeCodeProtocols â€” TDD Orchestrator
+# VibeCodeProtocols — caveman edition
 
-**Model assignment / AsignaciÃ³n de modelos:**
-- **Opus** (this skill): spec, plan, verify, simplify, deploy, orchestration
-- **Sonnet** (subagents): RED tests, GREEN implementation, REFACTOR, DOCS, CHORE
+**Orchestrator run under `/fableultracode` contract, whole session. Sonnet 5 build tasks. Hard gate: red test first, always.**
 
----
-
-## RULES â€” NON-NEGOTIABLE / REGLAS INNEGOCIABLES
-
-1. **No red test visible â†’ no implementation. Hard gate. Zero exceptions.**
-2. One subagent = one atomic task. Never more.
-3. Subagents do NOT make architectural decisions.
-4. Opus does NOT code features â€” only spec/plan/verify/simplify/deploy.
-5. Every phase end â†’ update `.vibe/SESSION.md`.
-6. DoD: coverage â‰¥90% + lint 0 + typecheck 0 + docs updated + .vibe updated.
-7. Present multiple-choice questions at every significant decision. Wait for answer before continuing.
+Model split: orchestrator = you, wrapped in fableultracode (autonomy + rigor + comms contract, session-long). Build tasks = Sonnet 5, effort **low** default (config below).
 
 ---
 
-## PHASE 0 â€” BOOTSTRAP
+## LAWS — non-negotiable
 
-```bash
-# Auto-detect stack
-ls package.json pyproject.toml go.mod Cargo.toml pom.xml 2>/dev/null | head -5
+1. No red test seen → no impl. Zero exceptions.
+2. 1 subagent = 1 atomic task. Never more.
+3. Subagents don't decide architecture.
+4. Orchestrator codes zero features — spec/plan/verify/simplify/security/deploy only.
+5. Every gate → 1 line to `.vibe/SESSION.md` (resume ledger).
+6. DoD: coverage ≥90% + lint 0 + typecheck 0 + docs + .vibe updated + security clean + adversarial pass.
+7. Config menus (model/effort/detail) at phase start. Content menus (approve/modify) at decisions. Both wait for answer.
+
+---
+
+## PHASE 0 — BOOTSTRAP
+
+1. **Invoke Skill `fableultracode`.** Contract active rest of session: autonomous execution, lead-with-outcome comms, evidence-gated state changes, code discipline, thinking_mode auto.
+2. Detect stack: `ls package.json pyproject.toml go.mod Cargo.toml pom.xml 2>/dev/null`.
+3. Read `.vibe/PROJECT.md` + `SESSION.md` + `DECISIONS.md` if exist.
+4. **Resume check** — `SESSION.md` shows unfinished gate or `tasks.json` has non-`done` task → do NOT restart at SPEC. Re-detect phase with evidence (run that task's tests: FAIL=pre-GREEN, PASS=post-GREEN; `git diff` test files, changed-since-RED=violation stop). Never trust memory. Full protocol: `skills/caveman-tdd.md` § RESUME.
+5. No `.vibe/` → create from `templates/vibe/`.
+6. Report 1 line: memory loaded / new project.
+7. 🔵 confirm detected stack (A approve / B correct).
+
+---
+
+## PHASE 1 — SPEC
+
+🔵 **CONFIG** (ask once):
+```
+A) Detail: minimal (ACs only) / standard (+ constraints+non-goals) / exhaustive (+ risk notes)
+B) Include non-goals section? Y/N
 ```
 
-Steps:
-1. Read `.vibe/PROJECT.md`, `.vibe/SESSION.md`, `.vibe/DECISIONS.md` if they exist.
-2. If `.vibe/` missing â†’ create it with templates from `templates/vibe/`.
-3. Report: "ðŸ“‹ Memory loaded: [project summary]" or "ðŸ†• New project â€” initializing .vibe/"
-4. Detect: test runner, linter, typechecker, builder from project manifest.
-5. Ask user to confirm detected stack before proceeding.
+Generate `docs/spec.md` — template: `skills/spec-plan-templates.md`.
 
-**Stack detection matrix:**
-| File found | Stack | Test runner | Linter | Typecheck |
-|---|---|---|---|---|
-| package.json + tsconfig | TypeScript/Node | vitest or jest | eslint | tsc |
-| pyproject.toml / setup.py | Python | pytest | ruff | mypy |
-| go.mod | Go | go test | golangci-lint | go vet |
-| Cargo.toml | Rust | cargo test | clippy | cargo check |
-| pom.xml | Java | mvn test | checkstyle | javac |
-
----
-
-## PHASE 1 â€” SPEC (Opus)
-
-Generate `docs/spec.md`. Use template format:
-
-```markdown
-# Spec: <feature-name>
-**Date:** YYYY-MM-DD | **Author:** Opus (VibeCodeProtocols)
-
-## Problem / Problema
-## Target users / Usuarios
-## Acceptance Criteria / Criterios de aceptaciÃ³n
-- [ ] GIVEN ... WHEN ... THEN ... (Gherkin-style, testable)
-## Constraints / Restricciones
-## Non-goals / No-goals
-## Stack & dependencies
-## Definition of Done (DoD)
+🔵 **CONTENT** review:
 ```
-
-**REQUIRED:** Present spec â†’ ask user:
-
-```
-ðŸ”µ SPEC REVIEW
-A) Approved â€” proceed to Plan
-B) Modify: [specify what]
+A) Approved — proceed to Plan
+B) Modify: [specify]
 C) Cancel
 ```
 
-Save to `.vibe/SESSION.md`: what was specced and why.
+`.vibe/SESSION.md` += what/why specced.
 
 ---
 
-## PHASE 2 â€” PLAN (Opus)
+## PHASE 2 — PLAN
 
-Generate `docs/plan.md` + `docs/tasks.json`.
-
-Each task must include:
-```json
-{
-  "id": "T01",
-  "description": "one function or module â€” atomic",
-  "files_to_create": [],
-  "files_to_modify": [],
-  "test_files": [],
-  "test_types": ["unit", "integration", "e2e"],
-  "subagents": ["red", "green", "refactor"],
-  "depends_on": []
-}
+🔵 **CONFIG** (ask once):
+```
+A) Task granularity: coarse (module-level) / atomic (1 fn/module, default) / hyper-atomic (split further)
+B) Parallel build allowed for independent tasks? Y/N (default Y — see orchestrator-opus.md § PARALLEL)
 ```
 
-**REQUIRED:** Present plan â†’ ask user:
+Generate `docs/plan.md` + `docs/tasks.json` — template: `skills/spec-plan-templates.md`. Status lifecycle per task: `pending→red→green→refactor→done`.
 
+🔵 **CONTENT** review:
 ```
-ðŸ”µ PLAN REVIEW
-A) Approved â€” start Build
+A) Approved — start Build
 B) Add/remove tasks: [specify]
 C) Change order
 D) Cancel
@@ -109,120 +76,95 @@ D) Cancel
 
 ---
 
-## PHASE 3 â€” BUILD (Sonnet subagents per task)
+## PHASE 3 — BUILD (Sonnet 5 subagents, per task)
 
-For each task in topological order:
-
-### 3.1 â€” RED (Sonnet subagent)
-
-Read `skills/subagent-red.md`. Spawn:
+🔵 **CONFIG** (ask once before first task):
 ```
-Agent(
-  subagent_type="claude",
-  model="sonnet",
-  prompt=<contents of skills/subagent-red.md> + "\n\n## TASK\n" + <task JSON>
-)
+A) Model/effort: sonnet low (default, fast+cheap) / sonnet standard / sonnet high (complex logic)
+B) Override per-task later if a task looks harder than expected? Y/N
 ```
 
-**HARD GATE â€” verify before continuing:**
-```bash
-# Run tests â€” must see FAILURE output
-<detected_test_command>
-```
-- Output shows failures â†’ âœ… gate passed, continue to GREEN.
-- Output shows all pass â†’ ðŸš« BLOCKED. Report: "RED GATE FAIL: Task [id]. Tests pass before implementation exists. Review test file."
-- Error running tests â†’ fix environment, retry once. If still fails â†’ escalate to user.
+Per task, topological order — full delegation pattern: `skills/orchestrator-opus.md`.
 
-### 3.2 â€” GREEN (Sonnet subagent)
+**3.1 RED** — `skills/subagent-red.md`. Spawn `model: sonnet, effort: <config>`.
+Gate: `scripts/verify-red.sh "<pattern>" "<cmd>"`. Nonzero exit + assertion/missing-module failures (not parse errors) = ✅ pass → GREEN. Exit 0 = 🚫 blocked, report to user.
 
-Read `skills/subagent-green.md`. Spawn with task context.
+**3.2 GREEN** — `skills/subagent-green.md`. Verify PASS, no regressions.
 
-Verify: `<test_command>` shows PASS.
+**3.3 REFACTOR** — `skills/subagent-refactor.md`. Verify still green.
 
-### 3.3 â€” REFACTOR (Sonnet subagent)
+Checkpoint after each gate: 1 line `.vibe/SESSION.md` (`T<id> RED PASS` / `GREEN ✅` / `REFACTOR green`), `tasks.json` status bump.
 
-Read `skills/subagent-refactor.md`. Spawn with task context.
-
-Verify: tests still PASS after refactor.
-
-Update `.vibe/SESSION.md` after each task.
+Parallel: tasks with no `depends_on` overlap → spawn simultaneously (if config B=Y).
 
 ---
 
-## PHASE 4 â€” TEST (Opus)
+## PHASE 4 — FINAL (fableultracode-orchestrated close-out)
 
-Run full test suite. Measure coverage. Check lint and typecheck.
+Re-affirm `/fableultracode` contract — this phase leans hardest on it: multi-agent fan-out + adversarial verify, not solo pass.
 
+**4.1 Verify** — full suite + coverage + lint + typecheck:
 ```bash
-# Collect and show full output â€” do not suppress failures
 <test_command_with_coverage>
 <lint_command>
 <typecheck_command>
 ```
+Gate: coverage ≥90%, unit/integration/e2e all pass, lint 0, typecheck 0. Any fail → spawn `subagent-chore.md`, re-run.
 
-**DoD gates:**
-- [ ] Coverage â‰¥ 90%
-- [ ] Unit: all pass
-- [ ] Integration: all pass
-- [ ] E2E: all scenarios pass
-- [ ] Lint: 0 errors
-- [ ] Typecheck: 0 errors
+**4.2 Simplify** — Boy Scout on all changed files (dead code, dup, premature abstraction, no new features). Tests green after each file. Diff summary → `.vibe/SESSION.md`.
 
-If any gate fails â†’ spawn subagent-chore to fix, then re-run full suite.
+**4.3 Security (cyber-neo)** — invoke Skill `cyber-neo` on the changeset. 11 categories, OWASP 2025 + CWE Top 25, 5 parallel subagents. Critical/High finding → fix before continuing, re-scan. Medium/Low → log to `.vibe/DEBT.md`, ask user severity call.
 
----
+**4.4 Adversarial review** — fableultracode pattern: 3-5 independent skeptics per changed file/claim, prompted to refute (correctness / security / does-it-reproduce lenses). Kill/fix findings that survive majority refute. Never skip this to save tokens — degrade the mechanism (fewer votes) before dropping it.
 
-## PHASE 5 â€” SIMPLIFY (Opus)
+**4.5 Tests (final)** — re-run full suite post-fixes from 4.3/4.4. Must be green — this is the last check before commit.
 
-Apply Boy Scout Rule to all changed files:
-- Remove dead code and unused imports
-- Eliminate duplication (extract shared logic)
-- Remove premature abstractions
-- No new features during this phase
+**4.6 Commit/push/merge**:
+```bash
+git add -A && git commit -m "<type>(<scope>): <what+why>"
+```
+Commit = reversible, do it. **Push/merge = show the exact command, ask 🔵 confirm first** — never automatic, never `--force`, never skip hooks.
+```
+🔵 A) git push origin <branch>
+B) git push + open PR
+C) Hold — don't push yet
+```
 
-Run tests after each file simplified. Must stay green.
-
-Save simplification diff summary to `.vibe/SESSION.md`.
-
----
-
-## PHASE 6 â€” DEPLOY (Opus)
-
-Read `skills/deploy-zip.md` for full protocol.
-
-Required outputs:
-- Production build in `dist/`
-- `dist.zip` + `checksums.txt` (SHA256)
-- `CHANGELOG.md` updated with release notes from `.vibe/SESSION.md`
-- Semantic version tag committed
+**4.7 Backups**:
+- Obsidian: if `Obsidian/07_Backups_Log/` exists → note with path, sha256, size (see any project's log for format).
+- Graphify: if `graphify-out/` exists → `graphify update .` (AST-only, no API cost).
+- `.vibe/SESSION.md` archived to `.vibe/sessions/YYYY-MM-DD-<topic>.md`, reset for next session.
+- Optional distributable artifact (dist.zip+checksums): `skills/deploy-zip.md`, only if project ships one.
 
 ---
 
-## MULTIPLE CHOICE PROTOCOL
+## CONFIG MENU PROTOCOL
 
-At every significant decision, present options before acting:
+Once per phase, before content decisions:
+```
+🔵 [PHASE] CONFIG
+A) [option] — [default marked]
+B) [option]
+Waiting for answer before continuing.
+```
+
+## CONTENT DECISION PROTOCOL (unchanged)
 
 ```
-ðŸ”µ [DECISION TOPIC]
+🔵 [DECISION TOPIC]
 [Context: why this matters]
-
-A) [Option] â€” [Trade-off]
-B) [Option] â€” [Trade-off]
-C) [Option] â€” [Trade-off]
-
-Esperando tu respuesta (A/B/C) antes de continuar.
-Waiting for your answer (A/B/C) before continuing.
+A) [Option] — [trade-off]
+B) [Option] — [trade-off]
+Esperando tu respuesta antes de continuar.
 ```
 
 ---
 
 ## MEMORY UPDATES
 
-After each phase, update `.vibe/`:
-
 | File | When | What |
 |---|---|---|
-| `SESSION.md` | Every phase | What happened, output, issues |
-| `DECISIONS.md` | When choosing approach | Decision + reasoning |
-| `PATTERNS.md` | When discovering conventions | How things are done here |
-| `DEBT.md` | When deferring cleanup | What and why deferred |
+| `SESSION.md` | every phase + every gate | 1 line per gate — resume ledger |
+| `DECISIONS.md` | choosing between approaches | decision + reasoning |
+| `PATTERNS.md` | discovering a project convention | pattern + example + when |
+| `DEBT.md` | deferring cleanup, or 4.3 medium/low findings | what, where, severity, why deferred |

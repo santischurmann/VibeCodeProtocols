@@ -1,194 +1,81 @@
 ---
 name: vcp-deploy
 description: |
-  ES: Protocolo de deploy en producción: build optimizado, dist.zip con checksums, release notes, CHANGELOG.
-  EN: Production deploy protocol: optimized build, dist.zip with checksums, release notes, CHANGELOG update.
+  ES: Sub-paso opcional de Phase 4.7 — build versionado, dist.zip+checksums, CHANGELOG, tag. Solo si el proyecto distribuye artefacto.
+  EN: Optional Phase 4.7 sub-step — versioned build, dist.zip+checksums, CHANGELOG, tag. Only if the project ships a distributable artifact.
 allowed-tools: Read, Write, Edit, Bash, Glob
 ---
 
-# VCP Deploy Protocol
+# VCP Deploy — artifact sub-step (Phase 4.7)
 
-**Precondition:** ALL of the following must be true before running deploy:
-- [ ] Full test suite passing (unit + integration + e2e)
-- [ ] Coverage ≥ 90%
-- [ ] Lint: 0 errors
-- [ ] Typecheck: 0 errors
-- [ ] SIMPLIFY phase complete
+**Precondition:** Phase 4.1-4.6 already done (verify+simplify+security+adversarial+tests+commit green). This file does NOT re-verify — it packages.
 
-If any check fails → stop. Do NOT deploy broken code.
+Interrupted → safe to re-run: zip/checksums regenerate, version bump applies once (after user answers).
 
 ---
 
-## STEP 1 — Final verification
+## STEP 1 — version
 
 ```bash
-# Run full suite one last time
-<test_command> 2>&1
-<lint_command> 2>&1
-<typecheck_command> 2>&1
-echo "Pre-deploy checks: DONE"
+node -e "console.log(require('./package.json').version)"   # Node
+grep -m1 "^version" pyproject.toml | cut -d'"' -f2          # Python
+cat go.mod | head -3                                        # Go
+```
+
+```
+🔵 VERSION BUMP — current X.Y.Z
+A) Patch (bugfix) B) Minor (feature, compat) C) Major (breaking)
 ```
 
 ---
 
-## STEP 2 — Determine version
-
-Read current version from project manifest:
+## STEP 2 — build
 
 ```bash
-# Node
-node -e "console.log(require('./package.json').version)"
-
-# Python
-grep -m1 "^version" pyproject.toml | cut -d'"' -f2
-
-# Go
-cat go.mod | head -3
+npm run build 2>&1                              # Node/TS
+python -m build --wheel 2>&1                     # Python
+mkdir -p dist && go build -o dist/<bin> ./cmd/... 2>&1   # Go
+cargo build --release 2>&1 && cp target/release/<bin> dist/   # Rust
 ```
 
-Ask orchestrator / user for next version:
-
-```
-🔵 VERSION BUMP
-Current version: X.Y.Z
-A) Patch (X.Y.Z+1) — bug fixes only
-B) Minor (X.Y+1.0) — new features, backward-compatible
-C) Major (X+1.0.0) — breaking changes
-```
-
-Update version in manifest after user answers.
+0 errors, artifacts confirmed in `dist/`.
 
 ---
 
-## STEP 3 — Production build
+## STEP 3 — dist.zip + checksums
 
 ```bash
-# Auto-detected from stack:
-# Node/TS
-npm run build 2>&1
-
-# Python
-python -m build --wheel 2>&1
-
-# Go
-mkdir -p dist
-go build -o dist/<binary-name> ./cmd/... 2>&1
-
-# Rust
-cargo build --release 2>&1
-cp target/release/<binary> dist/
-```
-
-Build must succeed with 0 errors. Verify artifacts exist in `dist/`.
-
----
-
-## STEP 4 — Generate dist.zip
-
-```bash
-VERSION=$(cat .vibe/SESSION.md | grep "Version:" | tail -1 | awk '{print $2}')
+VERSION=$(grep -m1 "^version" pyproject.toml 2>/dev/null | cut -d'"' -f2 || node -e "console.log(require('./package.json').version)")
 ZIP_NAME="dist-${VERSION:-$(date +%Y%m%d)}.zip"
-
-# Clean previous
 rm -f dist.zip checksums.txt
-
-# Create zip (exclude source maps, caches, test artifacts)
-zip -r "$ZIP_NAME" dist/ \
-  --exclude "*.map" \
-  --exclude "**/__pycache__/**" \
-  --exclude "**/.pytest_cache/**" \
-  --exclude "**/node_modules/**" \
-  --exclude "**/*.test.*" \
-  --exclude "**/*.spec.*"
-
-# Generate checksums
+zip -r "$ZIP_NAME" dist/ --exclude "*.map" --exclude "**/__pycache__/**" --exclude "**/.pytest_cache/**" --exclude "**/node_modules/**" --exclude "**/*.test.*" --exclude "**/*.spec.*"
 sha256sum "$ZIP_NAME" > checksums.txt
-md5sum "$ZIP_NAME" >> checksums.txt
-
-echo "=== ARTIFACT ==="
-echo "File: $ZIP_NAME"
-echo "Size: $(du -sh "$ZIP_NAME" | cut -f1)"
-echo "SHA256: $(cat checksums.txt | head -1 | awk '{print $1}')"
+echo "$ZIP_NAME — $(du -sh "$ZIP_NAME" | cut -f1) — $(cat checksums.txt)"
 ```
 
 ---
 
-## STEP 5 — Generate release notes from .vibe/SESSION.md
+## STEP 4 — CHANGELOG.md
+
+Move `## [Unreleased]` content to `## [X.Y.Z] — YYYY-MM-DD`, add empty `## [Unreleased]` on top.
+
+---
+
+## STEP 5 — tag (not push — 4.6 owns push confirmation)
 
 ```bash
-echo "## Release v${VERSION} — $(date +%Y-%m-%d)" > release-notes.md
-echo "" >> release-notes.md
-echo "### Changes" >> release-notes.md
-
-# Extract SESSION.md phase completions
-grep "^## Task\|^## Phase\|^- " .vibe/SESSION.md | head -30 >> release-notes.md
-
-echo "" >> release-notes.md
-echo "### Checksums" >> release-notes.md
-cat checksums.txt >> release-notes.md
-```
-
----
-
-## STEP 6 — Update CHANGELOG.md
-
-Move content from `## [Unreleased]` section to new versioned section:
-
-```markdown
-## [X.Y.Z] — YYYY-MM-DD
-
-### Added
-- ...
-
-### Changed
-- ...
-
-### Fixed
-- ...
-```
-
-Add new empty `## [Unreleased]` section at top.
-
----
-
-## STEP 7 — Commit and tag
-
-```bash
-git add -A
-git commit -m "release: v${VERSION}"
 git tag -a "v${VERSION}" -m "Release v${VERSION}"
-echo "Tagged: v${VERSION}"
-echo "Run 'git push && git push --tags' to publish"
 ```
 
-Do NOT push automatically. Show user the command. Ask for confirmation.
+Publishing (push + tags) is asked in Phase 4.6, not here — don't duplicate the confirm.
 
 ---
 
-## STEP 8 — Archive session
-
-```bash
-SESSION_ARCHIVE=".vibe/sessions/$(date +%Y-%m-%d)-release-v${VERSION}.md"
-cp .vibe/SESSION.md "$SESSION_ARCHIVE"
-echo "# Session — (next)" > .vibe/SESSION.md
-echo "Session archived to $SESSION_ARCHIVE"
-```
-
----
-
-## DEPLOY REPORT
+## REPORT
 
 ```
-DEPLOY COMPLETE — v<version>
-Artifact:     <zip_name> (<size>)
-SHA256:       <hash>
-Tag:          v<version> (local, not pushed)
-CHANGELOG:    updated
-.vibe/:       session archived
-
-To publish:
-  git push && git push --tags
-
-One-liner install (if distributing):
-  curl -fsSL <your-raw-url>/install.sh | bash
+DEPLOY ARTIFACT — v<version>
+File: <zip_name> (<size>) — SHA256 <hash>
+Tag: v<version> (local)
+CHANGELOG: updated
 ```

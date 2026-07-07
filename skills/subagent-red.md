@@ -100,6 +100,10 @@ RED GATE: PASS — [N] tests failing as expected. Ready for GREEN.
 
 ## HARD GATE — If tests pass
 
+**Parse/collection errors are NOT a valid red.** If the failure output shows syntax or
+collection errors instead of assertion failures / missing-module errors → fix the test
+file and re-run. A garbage red makes GREEN meaningless.
+
 If tests pass before implementation exists, output:
 ```
 RED GATE: FAIL — Tests pass before implementation. 

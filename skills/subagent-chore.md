@@ -145,6 +145,9 @@ Tasks completed:
 CHORE GATE: COMPLETE
 ```
 
+If any task letter could NOT reach its target (e.g. lint errors remain), say so with the
+exact remaining errors — never report COMPLETE over a partial fix.
+
 ## FORBIDDEN
 
 - ❌ Do NOT suppress errors with `// eslint-disable`, `# noqa`, `@ts-ignore` without explanation
